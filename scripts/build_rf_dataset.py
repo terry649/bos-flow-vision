@@ -16,5 +16,7 @@ ap.add_argument("--estimator", default="dis",
 ap.add_argument("--out", type=Path, required=True)
 ap.add_argument("--limit-per-type", type=int, default=None)
 ap.add_argument("--seed", type=int, default=0)
+ap.add_argument("--encoding", default="mag", choices=["mag", "vec"])
 args = ap.parse_args()
-print(export(args.dataset, args.out, args.estimator, args.seed, args.limit_per_type))
+print(export(args.dataset, args.out, args.estimator, args.seed, args.limit_per_type,
+             encoding=args.encoding))

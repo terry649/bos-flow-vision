@@ -1,0 +1,2 @@
+# Two independent flows in one frame (stress test only; not in the training set).
+member_types: [blast, shear_layer, wedge, expansion]

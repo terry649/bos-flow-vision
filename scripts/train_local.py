@@ -4,6 +4,11 @@ then report per-class mask mAP on the test split. Free, no credits.
     uv sync --group train
     uv run python scripts/train_local.py --data data/synthetic/v1_rf_dis --size medium --epochs 50
     uv run python scripts/train_local.py --data data/synthetic/smoke_export --size nano --epochs 1 --batch 2
+    # replicate Roboflow's hosted default recipe for rfdetr-seg-medium
+    uv run python scripts/train_local.py --data ... --epochs 100 --set cls_loss_coef=5 \
+        --set early_stopping=true --set early_stopping_patience=15 --set early_stopping_min_delta=0.0005
+
+Extra --set values are passed to rfdetr's TrainConfig, which rejects unknown keys.
 """
 
 import argparse
@@ -31,6 +36,8 @@ def main():
     ap.add_argument("--device", default=None, help="mps | cuda | cpu (default: auto)")
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--set", action="append", default=[], metavar="KEY=VALUE",
+                    help="extra rfdetr TrainConfig field (value parsed as JSON when possible)")
     args = ap.parse_args()
 
     out = args.out or Path("runs") / f"{args.data.name}_{args.size}"
@@ -40,6 +47,12 @@ def main():
           "log_per_class_metrics": True}
     if args.device:
         kw["device"] = args.device
+    for item in args.set:
+        key, _, value = item.partition("=")
+        try:
+            kw[key] = json.loads(value)
+        except json.JSONDecodeError:
+            kw[key] = value
     model.train(**kw)
 
     best = rfdetr.RFDETR.from_checkpoint(out / "checkpoint_best_total.pth")

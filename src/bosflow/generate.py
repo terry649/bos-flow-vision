@@ -143,6 +143,18 @@ def sample_flow(flow_type: str, rng, fcfg: dict, fov: float) -> F.Flow:
             seed=int(rng.integers(2**31)),
             pose=_pose(rng, pose_cfg, fov, "x_frac", "center_y_frac"),
         )
+    if flow_type == "composite":
+        # Two distinct flow types; at most one with a solid body so bodies don't overlap.
+        members, bodied = [], {"wedge", "cone", "expansion"}
+        kinds = list(c.get("member_types", ["blast", "shear_layer", "wedge", "expansion"]))
+        while len(members) < 2:
+            ft = str(rng.choice(kinds))
+            if any(m.flow_type == ft for m in members):
+                continue
+            if ft in bodied and any(m.flow_type in bodied for m in members):
+                continue
+            members.append(sample_flow(ft, rng, fcfg["_all"][ft], fov))
+        return F.CompositeFlow(members)
     raise ValueError(f"unknown flow type {flow_type!r}")
 
 
@@ -237,7 +249,10 @@ def generate_sample(flow_type: str, seed_seq: np.random.SeedSequence, cfg: dict)
         optics = sample_optics(rng, cfg["optics"])
         camera = sample_camera(rng, cfg["optics"]["camera"])
         pattern = sample_pattern(rng, cfg["optics"]["background"])
-        flow = sample_flow(flow_type, rng, cfg["flows"][flow_type], optics.field_of_view[1])
+        fcfg = cfg["flows"].get(flow_type, {})
+        if flow_type == "composite":
+            fcfg = dict(fcfg, _all=cfg["flows"])
+        flow = sample_flow(flow_type, rng, fcfg, optics.field_of_view[1])
         sample = render(flow, optics, camera, pattern, rng, cfg["supersample"],
                         cfg["margin_px"], cfg["min_band_px"])
         sample.instances = [i for i in sample.instances
@@ -332,8 +347,25 @@ def write_coco_gt(out_dir: Path, metas: list[dict], vmax: float) -> Path:
     return path
 
 
+def apply_overrides(cfg: dict, overrides: list[str]) -> dict:
+    """Set dotted config keys from ``key=value`` strings (values parsed as YAML)."""
+    import copy
+
+    cfg = copy.deepcopy(cfg)
+    for item in overrides:
+        key, _, value = item.partition("=")
+        node = cfg
+        *parents, leaf = key.split(".")
+        for k in parents:
+            node = node[k]
+        if leaf not in node:
+            raise KeyError(f"override {key!r} does not match an existing config key")
+        node[leaf] = yaml.safe_load(value)
+    return cfg
+
+
 def generate_dataset(out_dir: Path | str, cfg: dict, counts: dict | None = None,
-                     seed: int | None = None) -> list[dict]:
+                     seed: int | None = None, prefix: str = "") -> list[dict]:
     out_dir = Path(out_dir)
     counts = counts or cfg["counts"]
     seed = cfg["seed"] if seed is None else seed
@@ -343,7 +375,7 @@ def generate_dataset(out_dir: Path | str, cfg: dict, counts: dict | None = None,
     metas = []
     for (ft, k), ss in zip(jobs, children):
         sample = generate_sample(ft, ss, cfg)
-        metas.append(write_sample(sample, out_dir / "samples", f"{ft}_{k:04d}"))
+        metas.append(write_sample(sample, out_dir / "samples", f"{prefix}{ft}_{k:04d}"))
     with open(out_dir / "index.jsonl", "w") as fh:
         fh.writelines(
             json.dumps({"name": m["name"], "flow_type": m["flow"]["flow_type"],

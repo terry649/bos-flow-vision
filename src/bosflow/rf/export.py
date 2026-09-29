@@ -41,6 +41,27 @@ def encode_magnitude(u: np.ndarray, valid: np.ndarray, gamma: float = 0.5,
     return np.round(255.0 * img).astype(np.uint8), scale
 
 
+ENCODINGS = ("mag", "vec")
+
+
+def encode_image(u: np.ndarray, valid: np.ndarray, encoding: str = "mag"):
+    """RGB image for the segmentation model.
+
+    ``mag``: displacement magnitude replicated in all three channels (M3 default).
+    ``vec``: R = magnitude (same curve as ``mag``), G and B = signed x and y
+    displacement mapped to 128 +- 127 at the same robust scale, so the model sees
+    direction: compression and expansion differ in sign, not in magnitude.
+    """
+    mag, scale = encode_magnitude(u, valid)
+    if encoding == "mag":
+        return np.dstack([mag] * 3), scale
+    if encoding == "vec":
+        comp = [np.where(valid, np.clip(128.0 + 127.0 * c / scale, 0, 255), 128.0)
+                for c in (u[0], u[1])]
+        return np.dstack([mag, *(np.round(c).astype(np.uint8) for c in comp)]), scale
+    raise ValueError(f"unknown encoding {encoding!r}; choose from {ENCODINGS}")
+
+
 def assign_splits(names_by_type: dict[str, list[str]], seed: int) -> dict[str, str]:
     """Stratified split by flow type, deterministic in ``seed``."""
     rng = np.random.default_rng(seed)
@@ -57,7 +78,8 @@ def assign_splits(names_by_type: dict[str, list[str]], seed: int) -> dict[str, s
 
 
 def export(dataset_dir: Path | str, out_dir: Path | str, estimator: str,
-           seed: int = 0, limit_per_type: int | None = None, progress=print) -> dict:
+           seed: int = 0, limit_per_type: int | None = None, progress=print,
+           encoding: str = "mag") -> dict:
     from bosflow.displacement.benchmark import _method
 
     dataset_dir, out_dir = Path(dataset_dir), Path(out_dir)
@@ -85,9 +107,9 @@ def export(dataset_dir: Path | str, out_dir: Path | str, estimator: str,
             ref = np.asarray(Image.open(sdir / "reference.png"))
             defl = np.asarray(Image.open(sdir / "deflected.png"))
             u = estimate(ref, defl)
-        img, scale = encode_magnitude(u, gt["valid"])
+        img, scale = encode_image(u, gt["valid"], encoding)
         fname = f"{name}.png"
-        Image.fromarray(np.dstack([img] * 3)).save(out_dir / split / fname)
+        Image.fromarray(img).save(out_dir / split / fname)
 
         c = coco[split]
         image_id = len(c["images"]) + 1
@@ -100,7 +122,7 @@ def export(dataset_dir: Path | str, out_dir: Path | str, estimator: str,
                 c["annotations"].append(a)
         meta_lines.append(json.dumps({
             "file_name": fname, "split": split, "flow_type": meta["flow"]["flow_type"],
-            "estimator": estimator, "magnitude_scale_px": scale,
+            "estimator": estimator, "encoding": encoding, "magnitude_scale_px": scale,
             "peak_displacement_px": meta["peak_displacement_px"], "flow": meta["flow"],
         }, default=float))
         if (k + 1) % 50 == 0:
@@ -114,14 +136,16 @@ def export(dataset_dir: Path | str, out_dir: Path | str, estimator: str,
     source_manifest = json.loads((dataset_dir / "manifest.json").read_text())
     counts = {s: len(c["images"]) for s, c in coco.items()}
     lineage.write_manifest(out_dir / "manifest.json",
-                           {"estimator": estimator, "split_seed": seed, "splits": SPLITS},
+                           {"estimator": estimator, "encoding": encoding, "split_seed": seed,
+                            "splits": SPLITS},
                            source_dataset=str(dataset_dir),
                            source_config_sha256=source_manifest["config_sha256"],
                            source_git_commit=source_manifest["git_commit"], counts=counts)
     return counts
 
 
-def export_sequences(seq_root: Path | str, out_dir: Path | str, estimator: str) -> int:
+def export_sequences(seq_root: Path | str, out_dir: Path | str, estimator: str,
+                     encoding: str = "mag") -> int:
     """Blast sequences -> displacement-magnitude frames plus per-frame ground truth.
 
     Writes ``<out>/<sequence>/frame_XX.png`` and ``<out>/<sequence>/truth.json`` with
@@ -143,9 +167,9 @@ def export_sequences(seq_root: Path | str, out_dir: Path | str, estimator: str) 
             else:
                 u = estimate(np.asarray(Image.open(frame / "reference.png")),
                              np.asarray(Image.open(frame / "deflected.png")))
-            img, scale = encode_magnitude(u, gt["valid"])
+            img, scale = encode_image(u, gt["valid"], encoding)
             fname = f"{frame.name}.png"
-            Image.fromarray(np.dstack([img] * 3)).save(out_dir / seq.name / fname)
+            Image.fromarray(img).save(out_dir / seq.name / fname)
             s = meta["optics"]["object_pixel_size"]
             pose = meta["flow"]["pose"]
             rows, cols = img.shape

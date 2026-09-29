@@ -30,12 +30,18 @@ def main():
     ap.add_argument("--per-type", type=int, default=None,
                     help="override the per-flow-type counts in dataset.yaml")
     ap.add_argument("--sequences", action="store_true", help="also write blast sequences")
+    ap.add_argument("--types", nargs="*", default=None, help="flow types to generate")
+    ap.add_argument("--override", action="append", default=[], metavar="KEY=VALUE",
+                    help="dotted config override, e.g. flows.blast.radius_frac=[0.35,0.75]")
+    ap.add_argument("--prefix", default="", help="sample-name prefix (avoid collisions)")
     args = ap.parse_args()
 
-    cfg = G.load_config(args.config)
-    counts = {ft: args.per_type for ft in G.FLOW_TYPES} if args.per_type else None
+    cfg = G.apply_overrides(G.load_config(args.config), args.override)
+    types = args.types or list(G.FLOW_TYPES)
+    counts = ({ft: args.per_type for ft in types} if args.per_type
+              else {ft: n for ft, n in cfg["counts"].items() if ft in types})
     t0 = time.time()
-    metas = G.generate_dataset(args.out, cfg, counts=counts, seed=args.seed)
+    metas = G.generate_dataset(args.out, cfg, counts=counts, seed=args.seed, prefix=args.prefix)
     print(f"{len(metas)} samples in {time.time() - t0:.1f} s -> {args.out}")
 
     if args.sequences:

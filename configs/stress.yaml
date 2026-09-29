@@ -1,0 +1,44 @@
+# M4 synthetic stress tests: each set shifts one factor outside the training
+# distribution. Sets are generated from their own seeds (never seen in training)
+# and exported with the DIS estimator unless the set changes the estimator.
+seed: 20261001
+per_type: 20
+
+sets:
+  control:
+    description: nominal distribution, fresh seed (in-distribution reference)
+    overrides: []
+  estimator_demons:
+    description: images built from demons DIR displacement instead of DIS
+    estimator: demons
+    base: control
+  estimator_farneback:
+    description: images built from Farneback optical flow instead of DIS
+    estimator: farneback
+    base: control
+  camera_harsh:
+    description: noise and compression beyond the training range
+    overrides:
+      - optics.camera.read_noise_e=[18, 30]
+      - optics.camera.full_well_e=2000
+      - optics.camera.exposure=[0.3, 0.45]
+      - optics.camera.jpeg_probability=1.0
+      - optics.camera.jpeg_quality=[45, 65]
+  optics_shift:
+    description: longer background distance and wider aperture (wider, stronger shocks)
+    overrides:
+      - optics.Z_D=[0.8, 1.2]
+      - optics.f_number=[5.6, 9]
+  physics_extrapolation:
+    description: Mach numbers and angles beyond the training ranges
+    types: [wedge, cone, expansion]
+    overrides:
+      - flows.wedge.M1=[4.0, 6.0]
+      - flows.cone.M1=[4.0, 6.0]
+      - flows.cone.half_angle_deg=[30.0, 38.0]
+      - flows.expansion.M1=[3.5, 5.0]
+      - flows.expansion.turn_angle_deg=[25.0, 35.0]
+  composite:
+    description: two independent flows in one frame (never seen in training)
+    types: [composite]
+    per_type: 60

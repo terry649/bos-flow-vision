@@ -66,3 +66,15 @@ def test_mask_map_is_one_for_perfect_predictions(tmp_path):
     assert present
     for c in present:
         assert report["per_class"][c]["AP50"] > 0.99
+
+
+def test_vector_encoding_keeps_magnitude_and_signs():
+    u = np.zeros((2, 32, 32))
+    u[0, :, :16] = 2.0
+    u[1, :, 16:] = -2.0
+    valid = np.ones((32, 32), bool)
+    mag_img, _ = E.encode_image(u, valid, "mag")
+    vec_img, _ = E.encode_image(u, valid, "vec")
+    np.testing.assert_array_equal(vec_img[..., 0], mag_img[..., 0])
+    assert vec_img[0, 0, 1] > 128 and vec_img[0, 0, 2] == 128  # +x, no y
+    assert vec_img[0, 31, 1] == 128 and vec_img[0, 31, 2] < 128  # -y, no x

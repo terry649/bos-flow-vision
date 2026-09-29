@@ -385,3 +385,35 @@ class LinearGradientFlow(Flow):
     def metadata(self):
         return {"flow_type": self.flow_type, "grad_x": self.grad_x, "grad_y": self.grad_y,
                 "span": self.span}
+
+
+@dataclass
+class CompositeFlow(Flow):
+    """Several independent flows at different depths along the line of sight.
+
+    Path integrals are linear, so the projected density perturbations add exactly;
+    bodies are the union of the members' bodies and instances are concatenated.
+    """
+
+    members: list
+    flow_type: str = "composite"
+
+    def projected_density(self, x, y):
+        return sum(m.projected_density(x, y) for m in self.members)
+
+    def body(self, x, y):
+        out = np.zeros(np.shape(x), dtype=bool)
+        for m in self.members:
+            out |= m.body(x, y)
+        return out
+
+    def instances(self, x, y, half_width):
+        out = []
+        for i, m in enumerate(self.members):
+            for inst in m.instances(x, y, half_width):
+                inst.attrs = dict(inst.attrs, member=i, member_flow_type=m.flow_type)
+                out.append(inst)
+        return out
+
+    def metadata(self):
+        return {"flow_type": self.flow_type, "members": [m.metadata() for m in self.members]}

@@ -33,3 +33,11 @@ runs/
 results/m4/*/blast_*.mp4
 !results/m4/*/blast_003.mp4
 !results/m4/*/blast_014.mp4
+
+# NASA reference images are fetched by scripts/fetch_nasa_airbos.py, not committed
+data/public/*/*.jpg
+data/public/*/*.tif
+
+# NASA reference images are fetched by scripts/fetch_nasa_airbos.py, not committed
+data/public/*/*.jpg
+data/public/*/*.tif
