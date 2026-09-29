@@ -172,7 +172,7 @@ def export_sequences(seq_root: Path | str, out_dir: Path | str, estimator: str,
             Image.fromarray(img).save(out_dir / seq.name / fname)
             s = meta["optics"]["object_pixel_size"]
             pose = meta["flow"]["pose"]
-            rows, cols = img.shape
+            rows, cols = img.shape[:2]
             truth.append({
                 "file_name": fname, "t": meta["flow"]["t"],
                 "shock_radius_m": meta["flow"]["shock_radius"],

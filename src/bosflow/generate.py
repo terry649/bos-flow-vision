@@ -370,7 +370,8 @@ def generate_dataset(out_dir: Path | str, cfg: dict, counts: dict | None = None,
     counts = counts or cfg["counts"]
     seed = cfg["seed"] if seed is None else seed
     start = lineage.manifest(cfg)
-    jobs = [(ft, k) for ft in FLOW_TYPES for k in range(counts.get(ft, 0))]
+    order = [*FLOW_TYPES, *(t for t in counts if t not in FLOW_TYPES)]
+    jobs = [(ft, k) for ft in order for k in range(counts.get(ft, 0))]
     children = np.random.SeedSequence(seed).spawn(len(jobs))
     metas = []
     for (ft, k), ss in zip(jobs, children):
