@@ -19,10 +19,22 @@ ANNOTATION_GROUP = "flow-features"
 VERSION_SETTINGS = {"preprocessing": {"auto-orient": False}, "augmentation": {}}
 
 
+def _key_from_dotenv() -> str | None:
+    """Read ROBOFLOW_API_KEY from the repo's gitignored .env, if present."""
+    path = Path(__file__).resolve().parents[3] / ".env"
+    if not path.exists():
+        return None
+    for line in path.read_text().splitlines():
+        name, _, value = line.partition("=")
+        if name.strip() == "ROBOFLOW_API_KEY" and value.strip():
+            return value.strip().strip("'\"")
+    return None
+
+
 def connect():
     import roboflow
 
-    key = os.environ.get("ROBOFLOW_API_KEY")
+    key = os.environ.get("ROBOFLOW_API_KEY") or _key_from_dotenv()
     if not key:
         raise RuntimeError("Set ROBOFLOW_API_KEY in the environment (see .env.example).")
     return roboflow.Roboflow(api_key=key).workspace()
