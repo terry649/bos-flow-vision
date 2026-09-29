@@ -119,3 +119,45 @@ def export(dataset_dir: Path | str, out_dir: Path | str, estimator: str,
                            source_config_sha256=source_manifest["config_sha256"],
                            source_git_commit=source_manifest["git_commit"], counts=counts)
     return counts
+
+
+def export_sequences(seq_root: Path | str, out_dir: Path | str, estimator: str) -> int:
+    """Blast sequences -> displacement-magnitude frames plus per-frame ground truth.
+
+    Writes ``<out>/<sequence>/frame_XX.png`` and ``<out>/<sequence>/truth.json`` with
+    each frame's time, true shock radius (px and m), and physics metadata.
+    """
+    from bosflow.displacement.benchmark import _method
+
+    seq_root, out_dir = Path(seq_root), Path(out_dir)
+    estimate = None if estimator == "gt" else _method(estimator)
+    n = 0
+    for seq in sorted(p for p in seq_root.iterdir() if p.is_dir()):
+        (out_dir / seq.name).mkdir(parents=True, exist_ok=True)
+        truth = []
+        for frame in sorted(p for p in seq.iterdir() if p.is_dir()):
+            meta = json.loads((frame / "meta.json").read_text())
+            gt = np.load(frame / "ground_truth.npz")
+            if estimate is None:
+                u = gt["flow"]
+            else:
+                u = estimate(np.asarray(Image.open(frame / "reference.png")),
+                             np.asarray(Image.open(frame / "deflected.png")))
+            img, scale = encode_magnitude(u, gt["valid"])
+            fname = f"{frame.name}.png"
+            Image.fromarray(np.dstack([img] * 3)).save(out_dir / seq.name / fname)
+            s = meta["optics"]["object_pixel_size"]
+            pose = meta["flow"]["pose"]
+            rows, cols = img.shape
+            truth.append({
+                "file_name": fname, "t": meta["flow"]["t"],
+                "shock_radius_m": meta["flow"]["shock_radius"],
+                "shock_radius_px": meta["flow"]["shock_radius"] / s,
+                # Object-plane origin is the image center, y up.
+                "center_px": [0.5 * (cols - 1) + pose["x0"] / s, 0.5 * (rows - 1) - pose["y0"] / s],
+                "object_pixel_size_m": s, "E": meta["flow"]["E"], "rho0": meta["flow"]["rho0"],
+                "magnitude_scale_px": scale,
+            })
+            n += 1
+        (out_dir / seq.name / "truth.json").write_text(json.dumps(truth, indent=1))
+    return n
