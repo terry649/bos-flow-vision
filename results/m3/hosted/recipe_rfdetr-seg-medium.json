@@ -1,0 +1,1066 @@
+{
+ "modelType": "rfdetr-seg-medium",
+ "canonicalModelType": "rfdetr-seg-medium",
+ "family": "rf-detr",
+ "taskType": "instance-segmentation",
+ "availability": {
+  "entitled": false,
+  "runtimeEnabled": true
+ },
+ "schema": {
+  "hyperparameters": [
+   {
+    "key": "epochs",
+    "type": "int",
+    "valid": {
+     "ge": 1
+    },
+    "advice": {
+     "default": 100,
+     "low": 50,
+     "high": 150
+    }
+   },
+   {
+    "key": "lr",
+    "type": "float",
+    "valid": {
+     "gt": 0
+    },
+    "advice": {
+     "default": 0.0001,
+     "low": 1e-05,
+     "high": 0.01
+    }
+   },
+   {
+    "key": "lr_encoder",
+    "type": "float",
+    "valid": {
+     "gt": 0
+    },
+    "advice": {
+     "default": 0.00015,
+     "low": 1e-05,
+     "high": 0.01
+    }
+   },
+   {
+    "key": "early_stopping",
+    "type": "bool",
+    "advice": {
+     "default": true
+    }
+   },
+   {
+    "key": "early_stopping_patience",
+    "type": "int",
+    "valid": {
+     "ge": 1,
+     "le": 300
+    },
+    "advice": {
+     "default": 15,
+     "low": 5,
+     "high": 50
+    }
+   },
+   {
+    "key": "early_stopping_min_delta",
+    "type": "float",
+    "valid": {
+     "ge": 0,
+     "le": 1
+    },
+    "advice": {
+     "default": 0.0005,
+     "low": 0.0001,
+     "high": 0.01
+    }
+   },
+   {
+    "key": "bbox_loss_coef",
+    "type": "float",
+    "valid": {
+     "ge": 0
+    },
+    "advice": {
+     "default": 5,
+     "low": 0.5,
+     "high": 20
+    }
+   },
+   {
+    "key": "giou_loss_coef",
+    "type": "float",
+    "valid": {
+     "ge": 0
+    },
+    "advice": {
+     "default": 2,
+     "low": 0.5,
+     "high": 20
+    }
+   },
+   {
+    "key": "set_cost_class",
+    "type": "float",
+    "valid": {
+     "ge": 0
+    },
+    "advice": {
+     "default": 2,
+     "low": 0.5,
+     "high": 20
+    }
+   },
+   {
+    "key": "set_cost_bbox",
+    "type": "float",
+    "valid": {
+     "ge": 0
+    },
+    "advice": {
+     "default": 5,
+     "low": 0.5,
+     "high": 20
+    }
+   },
+   {
+    "key": "set_cost_giou",
+    "type": "float",
+    "valid": {
+     "ge": 0
+    },
+    "advice": {
+     "default": 2,
+     "low": 0.5,
+     "high": 20
+    }
+   },
+   {
+    "key": "cls_loss_coef",
+    "type": "float",
+    "valid": {
+     "ge": 0
+    },
+    "advice": {
+     "default": 5,
+     "low": 0.1,
+     "high": 10
+    }
+   },
+   {
+    "key": "mask_ce_loss_coef",
+    "type": "float",
+    "valid": {
+     "ge": 0
+    },
+    "advice": {
+     "default": 5,
+     "low": 0.5,
+     "high": 20
+    }
+   },
+   {
+    "key": "mask_dice_loss_coef",
+    "type": "float",
+    "valid": {
+     "ge": 0
+    },
+    "advice": {
+     "default": 5,
+     "low": 0.5,
+     "high": 20
+    }
+   }
+  ],
+  "online_augmentation": {
+   "splits": [
+    "train"
+   ],
+   "steps": [
+    {
+     "name": "flip",
+     "params": {
+      "horizontal": {
+       "type": "boolean",
+       "required": true
+      },
+      "vertical": {
+       "type": "boolean",
+       "required": true
+      }
+     },
+     "atLeastOne": [
+      "horizontal",
+      "vertical"
+     ],
+     "probability": true
+    },
+    {
+     "name": "ninety",
+     "params": {
+      "clockwise": {
+       "type": "boolean",
+       "required": true
+      },
+      "counter-clockwise": {
+       "type": "boolean",
+       "required": true
+      },
+      "upside-down": {
+       "type": "boolean",
+       "required": true
+      }
+     },
+     "atLeastOne": [
+      "clockwise",
+      "counter-clockwise",
+      "upside-down"
+     ],
+     "probability": true
+    },
+    {
+     "name": "rotate",
+     "params": {
+      "degrees": {
+       "type": "integer",
+       "min": 0,
+       "max": 45,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "brightness",
+     "params": {
+      "percent": {
+       "type": "integer",
+       "min": 0,
+       "max": 100,
+       "required": true
+      },
+      "brighten": {
+       "type": "boolean",
+       "required": true
+      },
+      "darken": {
+       "type": "boolean",
+       "required": true
+      }
+     },
+     "atLeastOne": [
+      "brighten",
+      "darken"
+     ],
+     "probability": true
+    },
+    {
+     "name": "exposure",
+     "params": {
+      "percent": {
+       "type": "integer",
+       "min": 0,
+       "max": 100,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "blur",
+     "params": {
+      "pixels": {
+       "type": "number",
+       "min": 0,
+       "max": 25,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "noise",
+     "params": {
+      "percent": {
+       "type": "number",
+       "min": 0,
+       "max": 100,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "crop",
+     "params": {
+      "min": {
+       "type": "integer",
+       "min": 0,
+       "max": 100,
+       "required": true
+      },
+      "percent": {
+       "type": "integer",
+       "min": 0,
+       "max": 100,
+       "required": true
+      }
+     },
+     "ordered": [
+      "min",
+      "percent"
+     ],
+     "probability": true
+    },
+    {
+     "name": "cutout",
+     "params": {
+      "count": {
+       "type": "integer",
+       "min": 1,
+       "max": 25,
+       "required": true
+      },
+      "percent": {
+       "type": "integer",
+       "min": 0,
+       "max": 100,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "mosaic",
+     "params": {},
+     "probability": true
+    },
+    {
+     "name": "shear",
+     "params": {
+      "horizontal": {
+       "type": "integer",
+       "min": 0,
+       "max": 45,
+       "required": true
+      },
+      "vertical": {
+       "type": "integer",
+       "min": 0,
+       "max": 45,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "saturation",
+     "params": {
+      "percent": {
+       "type": "integer",
+       "min": 0,
+       "max": 100,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "hue",
+     "params": {
+      "degrees": {
+       "type": "integer",
+       "min": 0,
+       "max": 180,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "rgrayscale",
+     "params": {
+      "percent": {
+       "type": "integer",
+       "min": 0,
+       "max": 100,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "motion-blur",
+     "params": {
+      "pixels": {
+       "type": "integer",
+       "min": 1,
+       "max": 1000,
+       "required": true
+      },
+      "angle": {
+       "type": "number",
+       "min": 0,
+       "max": 90,
+       "required": true
+      },
+      "hdr_frames": {
+       "type": "integer",
+       "min": 1,
+       "max": 5,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "camera-gain",
+     "params": {
+      "amount": {
+       "type": "integer",
+       "min": 1,
+       "max": 1,
+       "required": false
+      },
+      "variance_scale": {
+       "type": "number",
+       "min": 0.01,
+       "max": 0.5,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "bbflip",
+     "params": {
+      "horizontal": {
+       "type": "boolean",
+       "required": true
+      },
+      "vertical": {
+       "type": "boolean",
+       "required": true
+      }
+     },
+     "atLeastOne": [
+      "horizontal",
+      "vertical"
+     ],
+     "probability": true
+    },
+    {
+     "name": "bbninety",
+     "params": {
+      "clockwise": {
+       "type": "boolean",
+       "required": true
+      },
+      "counter-clockwise": {
+       "type": "boolean",
+       "required": true
+      },
+      "upside-down": {
+       "type": "boolean",
+       "required": true
+      }
+     },
+     "atLeastOne": [
+      "clockwise",
+      "counter-clockwise",
+      "upside-down"
+     ],
+     "probability": true
+    },
+    {
+     "name": "bbrotate",
+     "params": {
+      "degrees": {
+       "type": "integer",
+       "min": 0,
+       "max": 45,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "bbcrop",
+     "params": {
+      "min": {
+       "type": "integer",
+       "min": 0,
+       "max": 100,
+       "required": true
+      },
+      "percent": {
+       "type": "integer",
+       "min": 0,
+       "max": 100,
+       "required": true
+      }
+     },
+     "ordered": [
+      "min",
+      "percent"
+     ],
+     "probability": true
+    },
+    {
+     "name": "bbshear",
+     "params": {
+      "horizontal": {
+       "type": "integer",
+       "min": 0,
+       "max": 45,
+       "required": true
+      },
+      "vertical": {
+       "type": "integer",
+       "min": 0,
+       "max": 45,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "bbbrightness",
+     "params": {
+      "percent": {
+       "type": "integer",
+       "min": 0,
+       "max": 100,
+       "required": true
+      },
+      "brighten": {
+       "type": "boolean",
+       "required": true
+      },
+      "darken": {
+       "type": "boolean",
+       "required": true
+      }
+     },
+     "atLeastOne": [
+      "brighten",
+      "darken"
+     ],
+     "probability": true
+    },
+    {
+     "name": "bbexposure",
+     "params": {
+      "percent": {
+       "type": "integer",
+       "min": 0,
+       "max": 100,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "bbblur",
+     "params": {
+      "pixels": {
+       "type": "number",
+       "min": 0,
+       "max": 25,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "bbnoise",
+     "params": {
+      "percent": {
+       "type": "number",
+       "min": 0,
+       "max": 100,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "bbmotion-blur",
+     "params": {
+      "pixels": {
+       "type": "integer",
+       "min": 1,
+       "max": 1000,
+       "required": true
+      },
+      "angle": {
+       "type": "number",
+       "min": 0,
+       "max": 90,
+       "required": true
+      },
+      "hdr_frames": {
+       "type": "integer",
+       "min": 1,
+       "max": 5,
+       "required": true
+      }
+     },
+     "probability": true
+    },
+    {
+     "name": "bbcamera-gain",
+     "params": {
+      "amount": {
+       "type": "integer",
+       "min": 1,
+       "max": 1,
+       "required": false
+      },
+      "variance_scale": {
+       "type": "number",
+       "min": 0.01,
+       "max": 0.5,
+       "required": true
+      }
+     },
+     "probability": true
+    }
+   ]
+  },
+  "online_preprocessing": {
+   "steps": [
+    {
+     "name": "auto-orient",
+     "params": {
+      "fields": {},
+      "example": {}
+     }
+    },
+    {
+     "name": "isolate",
+     "params": {
+      "fields": {},
+      "example": {}
+     }
+    },
+    {
+     "name": "static-crop",
+     "params": {
+      "fields": {
+       "x_min": {
+        "type": "number",
+        "min": 0,
+        "max": 100,
+        "required": true
+       },
+       "x_max": {
+        "type": "number",
+        "min": 0,
+        "max": 100,
+        "required": true
+       },
+       "y_min": {
+        "type": "number",
+        "min": 0,
+        "max": 100,
+        "required": true
+       },
+       "y_max": {
+        "type": "number",
+        "min": 0,
+        "max": 100,
+        "required": true
+       }
+      },
+      "example": {
+       "x_min": 0,
+       "x_max": 100,
+       "y_min": 0,
+       "y_max": 100
+      },
+      "ordered": [
+       [
+        "x_min",
+        "x_max"
+       ],
+       [
+        "y_min",
+        "y_max"
+       ]
+      ]
+     }
+    },
+    {
+     "name": "resize",
+     "params": {
+      "fields": {
+       "enabled": {
+        "type": "boolean"
+       },
+       "format": {
+        "type": "string",
+        "valid": [
+         "Stretch to",
+         "Fill (with center crop) in",
+         "Fit within",
+         "Fit (reflect edges) in",
+         "Fit (black edges) in",
+         "Fit (white edges) in"
+        ],
+        "required": true
+       },
+       "width": {
+        "type": "integer",
+        "min": 1,
+        "max": 2048,
+        "required": true
+       },
+       "height": {
+        "type": "integer",
+        "min": 1,
+        "max": 2048,
+        "required": true
+       }
+      },
+      "example": {
+       "enabled": true,
+       "format": "Stretch to",
+       "width": 640,
+       "height": 640
+      }
+     }
+    },
+    {
+     "name": "tile",
+     "params": {
+      "discriminatedBy": "mode",
+      "variants": {
+       "grid": {
+        "fields": {
+         "mode": {
+          "type": "string",
+          "valid": [
+           "grid"
+          ],
+          "required": true
+         },
+         "rows": {
+          "type": "integer",
+          "min": 1,
+          "max": 100,
+          "required": true
+         },
+         "columns": {
+          "type": "integer",
+          "min": 1,
+          "max": 100,
+          "required": true
+         }
+        },
+        "example": {
+         "mode": "grid",
+         "rows": 2,
+         "columns": 2
+        }
+       },
+       "fixed_size": {
+        "fields": {
+         "mode": {
+          "type": "string",
+          "valid": [
+           "fixed_size"
+          ],
+          "required": true
+         },
+         "tileWidth": {
+          "type": "integer",
+          "min": 224,
+          "max": 4096,
+          "required": true
+         },
+         "tileHeight": {
+          "type": "integer",
+          "min": 224,
+          "max": 4096,
+          "required": true
+         },
+         "overlap": {
+          "type": "integer",
+          "min": 0,
+          "max": 90
+         },
+         "padding": {
+          "type": "string",
+          "valid": [
+           "black",
+           "white"
+          ]
+         }
+        },
+        "example": {
+         "mode": "fixed_size",
+         "tileWidth": 640,
+         "tileHeight": 640,
+         "overlap": 0,
+         "padding": "black"
+        }
+       },
+       "fixed_aspect": {
+        "fields": {
+         "mode": {
+          "type": "string",
+          "valid": [
+           "fixed_aspect"
+          ],
+          "required": true
+         },
+         "aspectRatio": {
+          "type": "number",
+          "min": 0.1,
+          "max": 10,
+          "required": true
+         },
+         "span": {
+          "type": "string",
+          "valid": [
+           "width",
+           "height"
+          ]
+         },
+         "overlap": {
+          "type": "integer",
+          "min": 0,
+          "max": 90
+         },
+         "padding": {
+          "type": "string",
+          "valid": [
+           "black",
+           "white"
+          ]
+         }
+        },
+        "example": {
+         "mode": "fixed_aspect",
+         "aspectRatio": 1,
+         "span": "width",
+         "overlap": 0,
+         "padding": "black"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "grayscale",
+     "params": {
+      "fields": {},
+      "example": {}
+     }
+    },
+    {
+     "name": "contrast",
+     "params": {
+      "fields": {
+       "type": {
+        "type": "string",
+        "valid": [
+         "Adaptive Equalization",
+         "Histogram Equalization",
+         "Contrast Stretching"
+        ],
+        "required": true
+       }
+      },
+      "example": {
+       "type": "Contrast Stretching"
+      }
+     }
+    },
+    {
+     "name": "filter-null",
+     "params": {
+      "fields": {
+       "percent": {
+        "type": "integer",
+        "min": 0,
+        "max": 100,
+        "required": true
+       }
+      },
+      "example": {
+       "percent": 100
+      }
+     }
+    },
+    {
+     "name": "dynamic-crop",
+     "params": {
+      "fields": {
+       "class": {
+        "type": "string",
+        "required": true
+       }
+      },
+      "example": {
+       "class": "example-class"
+      }
+     }
+    },
+    {
+     "name": "remap",
+     "params": {
+      "fields": {
+       "labels": {
+        "type": "map",
+        "required": true,
+        "values": {
+         "fields": {
+          "omit": {
+           "type": "boolean",
+           "required": true
+          },
+          "override": {
+           "type": "string"
+          }
+         },
+         "mutuallyExclusiveWhenTruthy": [
+          "omit",
+          "override"
+         ]
+        }
+       }
+      },
+      "example": {
+       "labels": {
+        "example-class": {
+         "omit": false,
+         "override": "renamed-class"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "filter-tags",
+     "params": {
+      "fields": {
+       "tags": {
+        "type": "map",
+        "required": true,
+        "values": {
+         "fields": {
+          "require": {
+           "type": "boolean",
+           "required": true
+          },
+          "omit": {
+           "type": "boolean",
+           "required": true
+          }
+         },
+         "mutuallyExclusiveWhenTruthy": [
+          "require",
+          "omit"
+         ]
+        }
+       }
+      },
+      "example": {
+       "tags": {
+        "reviewed": {
+         "require": true,
+         "omit": false
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "random-sample",
+     "params": {
+      "fields": {
+       "train": {
+        "type": "integer",
+        "min": 1,
+        "max": 100,
+        "required": true
+       },
+       "valid": {
+        "type": "integer",
+        "min": 0,
+        "max": 100,
+        "required": true
+       },
+       "test": {
+        "type": "integer",
+        "min": 0,
+        "max": 100,
+        "required": true
+       }
+      },
+      "example": {
+       "train": 100,
+       "valid": 100,
+       "test": 100
+      }
+     }
+    }
+   ]
+  },
+  "input": {
+   "onlineResizeAllowed": true,
+   "resizeFormats": [
+    "Stretch to",
+    "Fill (with center crop) in",
+    "Fit within",
+    "Fit (reflect edges) in",
+    "Fit (black edges) in",
+    "Fit (white edges) in"
+   ],
+   "resolutionRounding": "Width, height, and resolution are rounded to the nearest multiple of 24, with a minimum of 24."
+  }
+ },
+ "template": {
+  "schema_version": 1,
+  "input": {
+   "width": 432,
+   "height": 432,
+   "resize": {
+    "enabled": true,
+    "format": "Stretch to",
+    "width": 432,
+    "height": 432
+   },
+   "resolution": 432,
+   "splits": [
+    "train",
+    "valid",
+    "test"
+   ]
+  },
+  "online_preprocessing": [],
+  "online_augmentation": {
+   "splits": [
+    "train"
+   ],
+   "steps": []
+  },
+  "source_version": {
+   "dataset_id": "TFVH397loOU3fg2a8mnr",
+   "version_id": "1",
+   "baked_preprocessing": {},
+   "baked_augmentation": {},
+   "assertions": {
+    "resize_baked": false,
+    "augmentation_baked": false
+   }
+  },
+  "hyperparameters": {}
+ },
+ "usage": "The template is ready to submit verbatim as `trainRecipe` on a POST to this project/version's /v2/trainings path alongside `modelType`. To tune training, set a sparse subset of the keys listed in schema.hyperparameters under template.hyperparameters \u2014 any key you omit is filled with its advice.default server-side. advice.low/high is the recommended sweep range; valid.* are hard bounds the server enforces. Add augmentation steps from schema.online_augmentation.steps to template.online_augmentation.steps; each step is submitted as {name, params: {...}} \u2014 params is required, {} when a step has no fields \u2014 with the step's listed params plus an optional params.probability between 0 and 1. To set the overall pick rate, add template.online_augmentation.probability between 0 and 1 before submitting. The template omits this optional field; when omitted, the pick rate defaults to 1. params.probability is the chance the step is applied to a picked image (default 1), so the two multiply. Submitting a trainRecipe requires the workspace's online-augmentation training entitlement or rollout access, plus an enabled deployment runtime. availability.entitled reports the access decision and availability.runtimeEnabled reports the runtime check. Access is checked again on submit; if it has changed, the request can be rejected with a 403."
+}
