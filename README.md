@@ -45,7 +45,7 @@ and known flow parameters.
 | M1 | Synthetic generator and physics tests | Complete |
 | M2 | Displacement estimation benchmark | Complete (`results/m2`) |
 | M3 | Dataset, segmentation models, inference, tracking, physics checks | Complete (`results/m3`, `results/m4`) |
-| M4 | Controlled experiments and stress tests | In progress (`results/m4_experiments`) |
+| M4 | Controlled experiments and stress tests | Complete (`results/m4_experiments`) |
 | M5 | Technical write-up and quickstart demo | Planned |
 
 Note on history: earlier commits label the inference, tracking, and physics-check
@@ -60,7 +60,16 @@ freestream Mach number is recovered with a median error of 0.2% for wedges and 1
 for cones, and tracked blast fronts give a Sedov-Taylor exponent of 0.399 +- 0.001
 (theory: 0.4) with blast energy within 3%. Details, including a failure mode on
 blast fronts clipped by the image boundary and a physically motivated correction,
-are in `results/m4/README.md`. All results are on synthetic data.
+are in `results/m4/README.md`.
+
+Controlled experiments in M4 traced that failure to label integrity rather than the
+training recipe, data volume, or serving path: instances split into several pieces by
+the image boundary were stored as filled regions after upload to the dataset-hosting
+platform, and a model trained locally on those stored labels reproduced the failure.
+Exporting each piece as its own annotation fixes it. The same experiments show that
+adding signed displacement components to the input helps on composite scenes and under
+heavy camera noise but hurts when a different displacement estimator produces the
+images. See `results/m4_experiments/README.md`. All results are on synthetic data.
 
 ## Repository layout
 

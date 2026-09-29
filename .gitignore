@@ -41,3 +41,11 @@ data/public/*/*.tif
 # NASA reference images are fetched by scripts/fetch_nasa_airbos.py, not committed
 data/public/*/*.jpg
 data/public/*/*.tif
+# M4 evaluation outputs: keep metrics, tracks, and three illustrative videos
+results/m4_experiments/eval*/**/predictions_*.json
+results/m4_experiments/eval*/**/*.mp4
+results/m4_experiments/eval*/results.json
+!results/m4_experiments/eval_p3/arm_B_v2_data/sequences/blast_014.mp4
+!results/m4_experiments/eval_d3/arm_D_platform_labels/sequences/blast_014.mp4
+!results/m4_experiments/eval/v2_hosted/sequences/blast_014.mp4
+results/m4_experiments/**/.synced
