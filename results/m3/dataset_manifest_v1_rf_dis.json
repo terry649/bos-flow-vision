@@ -1,0 +1,35 @@
+{
+ "config": {
+  "estimator": "dis",
+  "split_seed": 0,
+  "splits": {
+   "test": 0.1,
+   "train": 0.7,
+   "valid": 0.2
+  }
+ },
+ "config_sha256": "3e2fd35684b107fdcef953366f3152e27773485866edadc2a6b34b9420b23a92",
+ "counts": {
+  "test": 100,
+  "train": 700,
+  "valid": 200
+ },
+ "git_commit": "ad861cd1c16bd864946d1769d398aea9748ae306",
+ "git_dirty": false,
+ "packages": {
+  "bosflow": "0.1.0",
+  "numpy": "2.3.5",
+  "opencv-python-headless": "5.0.0.93",
+  "pillow": "12.3.0",
+  "scikit-image": "0.26.0",
+  "scipy": "1.18.1",
+  "simpleitk": "2.5.6",
+  "torch": "2.14.0",
+  "torchvision": "0.29.0"
+ },
+ "platform": "Darwin-arm64",
+ "python": "3.12.14",
+ "source_config_sha256": "3a16c5bea26c9ed325eb99dfde4f6b9a14b27492face42bc055e7bbbbe233c2d",
+ "source_dataset": "data/synthetic/v1",
+ "source_git_commit": "58408ca786b33bab1490472d8fd3e5839fb7582f"
+}

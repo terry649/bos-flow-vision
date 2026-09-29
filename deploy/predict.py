@@ -83,7 +83,10 @@ class Model:
         if self._local:
             det = self._m(image_bgr, confidence=self.confidence)[0].to_supervision()
         else:
-            res = self._m.infer(image_bgr, confidence=self.confidence)[0]
+            # Polygon masks (the default) cannot represent holes, so a blast-front ring
+            # comes back as a filled disk. RLE is lossless.
+            res = self._m.infer(image_bgr, confidence=self.confidence,
+                                response_mask_format="rle")[0]
             det = sv.Detections.from_inference(res)
             # Remember the hosted model's id -> name mapping from its own responses.
             for cid, name in zip(det.class_id, det.data.get("class_name", [])):

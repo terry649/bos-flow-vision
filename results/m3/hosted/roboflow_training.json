@@ -1,0 +1,192 @@
+{
+ "training": {
+  "trainingId": "1ebcb8d157baf15f0faf",
+  "status": "finished",
+  "modelType": "rfdetr-seg-medium",
+  "start": 1790650655386,
+  "end": 1790656691136,
+  "models": [
+   {
+    "modelId": "terry-zhou/bos-flow-features-1-rfdetr-seg-medium-t1",
+    "modelType": "rfdetr-seg-medium",
+    "status": "finished",
+    "metrics": {
+     "map50": 99.98,
+     "precision": 99.4,
+     "recall": 100
+    }
+   }
+  ]
+ },
+ "evals": [
+  {
+   "status": "done",
+   "summary": null,
+   "performance_by_class": {
+    "evalId": "uU58cLeGAzuKVhtUz1vs",
+    "project": "bos-flow-features",
+    "versionId": "1",
+    "modelId": "terry-zhou/bos-flow-features-1-rfdetr-seg-medium-t1",
+    "taskType": "object-detection-like",
+    "split": "test",
+    "classes": [
+     {
+      "className": "expansion_fan",
+      "map50": 1,
+      "map50_95": 0.9876856435643564,
+      "map75": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "optimalThreshold": 0.43
+     },
+     {
+      "className": "shear_layer",
+      "map50": 1,
+      "map50_95": 0.9166666666666666,
+      "map75": 1,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "optimalThreshold": 0.06
+     },
+     {
+      "className": "shock",
+      "map50": 0.9995170248732189,
+      "map50_95": 0.6268741930883004,
+      "map75": 0.7136422999731007,
+      "precision": 1,
+      "recall": 0.988,
+      "f1": 0.994,
+      "optimalThreshold": 0.53
+     }
+    ]
+   },
+   "map_results": {
+    "evalId": "uU58cLeGAzuKVhtUz1vs",
+    "project": "bos-flow-features",
+    "versionId": "1",
+    "modelId": "terry-zhou/bos-flow-features-1-rfdetr-seg-medium-t1",
+    "taskType": "object-detection-like",
+    "splits": {
+     "valid": {
+      "map50": 0.9998567462555242,
+      "map50_95": 0.8488584217567715,
+      "map75": 0.9346507163427623,
+      "byObjectSize": {
+       "small": null,
+       "medium": null,
+       "large": {
+        "map50": 0.9998567462555242,
+        "map50_95": 0.8488584291723144,
+        "map75": 0.9346507163427623
+       }
+      },
+      "perClass": {
+       "expansion_fan": {
+        "map50": 1,
+        "map50_95": 0.9784633200162122,
+        "map75": 1,
+        "byObjectSize": {
+         "small": null,
+         "medium": null,
+         "large": {
+          "map50": 1,
+          "map50_95": 0.9784633200162122,
+          "map75": 1
+         }
+        }
+       },
+       "shear_layer": {
+        "map50": 1,
+        "map50_95": 0.9146609987085664,
+        "map75": 1,
+        "byObjectSize": {
+         "small": null,
+         "medium": null,
+         "large": {
+          "map50": 1,
+          "map50_95": 0.9146609987085664,
+          "map75": 1
+         }
+        }
+       },
+       "shock": {
+        "map50": 0.9995702387665729,
+        "map50_95": 0.6534509465455356,
+        "map75": 0.8039521490282865,
+        "byObjectSize": {
+         "small": null,
+         "medium": null,
+         "large": {
+          "map50": 0.9995702387665729,
+          "map50_95": 0.6534509687921645,
+          "map75": 0.8039521490282865
+         }
+        }
+       }
+      }
+     },
+     "test": {
+      "map50": 0.999839008291073,
+      "map50_95": 0.8437421677731078,
+      "map75": 0.9045474333243668,
+      "byObjectSize": {
+       "small": null,
+       "medium": null,
+       "large": {
+        "map50": 0.999839008291073,
+        "map50_95": 0.8437421677731078,
+        "map75": 0.9045474333243668
+       }
+      },
+      "perClass": {
+       "expansion_fan": {
+        "map50": 1,
+        "map50_95": 0.9876856435643564,
+        "map75": 1,
+        "byObjectSize": {
+         "small": null,
+         "medium": null,
+         "large": {
+          "map50": 1,
+          "map50_95": 0.9876856435643564,
+          "map75": 1
+         }
+        }
+       },
+       "shear_layer": {
+        "map50": 1,
+        "map50_95": 0.9166666666666666,
+        "map75": 1,
+        "byObjectSize": {
+         "small": null,
+         "medium": null,
+         "large": {
+          "map50": 1,
+          "map50_95": 0.9166666666666666,
+          "map75": 1
+         }
+        }
+       },
+       "shock": {
+        "map50": 0.9995170248732189,
+        "map50_95": 0.6268741930883004,
+        "map75": 0.7136422999731007,
+        "byObjectSize": {
+         "small": null,
+         "medium": null,
+         "large": {
+          "map50": 0.9995170248732189,
+          "map50_95": 0.6268741930883004,
+          "map75": 0.7136422999731007
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ ]
+}

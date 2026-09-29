@@ -112,10 +112,25 @@ def start_hosted_training(project, version: int, model_type: str, epochs: int | 
     return project.version(version).create_training(model_type=model_type, epochs=epochs)
 
 
+def trained_model_ids(project_name: str, version: int) -> list[str]:
+    from roboflow.adapters import rfapi
+
+    ws_url = connect().url
+    key = os.environ.get("ROBOFLOW_API_KEY") or _key_from_dotenv()
+    bundle = rfapi.get_training(key, ws_url, project_name, version)
+    return [m["modelId"] for m in bundle.get("models") or []]
+
+
 def per_class_evals(workspace, project_name: str, version: int) -> list[dict]:
-    """Per-class metrics from Roboflow's automatic evaluation on the test split."""
+    """Roboflow's automatic evaluation of each trained model on the test split.
+
+    The evals API accepts one filter per request, so query by trained model id.
+    Its taskType reads "object-detection-like", so treat these as box metrics and
+    use bosflow.rf.evaluate for mask mAP.
+    """
     out = []
-    for ev in workspace.evals(project=project_name, version=version, status="done"):
-        rows = ev.performance_by_class()
-        out.append({"summary": ev.summary, "per_class": rows})
+    for model_id in trained_model_ids(project_name, version):
+        for ev in workspace.evals(model=model_id, status="done"):
+            out.append({"model": model_id, "per_class": ev.performance_by_class(),
+                        "map_results": ev.map_results()})
     return out
