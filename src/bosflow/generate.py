@@ -16,7 +16,7 @@ import yaml
 from PIL import Image
 from scipy.ndimage import binary_dilation
 
-from bosflow import labels
+from bosflow import labels, lineage
 from bosflow.optics.background import dot_density_for_fill, random_dot_pattern
 from bosflow.optics.camera import Camera, capture
 from bosflow.optics.deflection import Optics, displacement_from_projection
@@ -174,6 +174,7 @@ class Sample:
     body: np.ndarray  # bool
     instances: list[F.Instance]
     meta: dict = field(default_factory=dict)
+    scene: dict = field(default_factory=dict)  # flow, optics, pattern, for re-rendering
 
 
 def render(flow: F.Flow, optics: Optics, camera: Camera, pattern: dict,
@@ -211,7 +212,14 @@ def render(flow: F.Flow, optics: Optics, camera: Camera, pattern: dict,
         inst.mask = inst.mask & ~body
         insts.append(inst)
 
+    # Largest singular value of the flow Jacobian: above 1 the image folds (caustics).
+    J = np.stack([np.stack(np.gradient(u[k]), 0) for k in range(2)])  # (2 comp, 2 axis, ...)
+    a, b, c, d = J[0, 1], J[0, 0], J[1, 1], J[1, 0]  # du/dx, du/dy, dv/dx, dv/dy
+    fro2 = a**2 + b**2 + c**2 + d**2
+    smax = np.sqrt(0.5 * (fro2 + np.sqrt(np.maximum(fro2**2 - 4 * (a * d - b * c) ** 2, 0))))
     meta = {
+        # 99.5th percentile: the pillbox-smeared step has integrable edge singularities.
+        "max_flow_gradient": float(np.percentile(smax[valid], 99.5)) if valid.any() else 0.0,
         "flow": flow.metadata(), "optics": optics.to_dict(), "camera": camera.to_dict(),
         "background": dict(pattern), "supersample": ss, "label_band_px": band_px,
         "peak_displacement_px": float(np.percentile(np.hypot(*u)[valid], 99.9))
@@ -234,8 +242,10 @@ def generate_sample(flow_type: str, seed_seq: np.random.SeedSequence, cfg: dict)
                         cfg["margin_px"], cfg["min_band_px"])
         sample.instances = [i for i in sample.instances
                             if i.mask.sum() >= cfg["min_instance_area_px"]]
-        if lo <= sample.meta["peak_displacement_px"] <= hi and sample.instances:
+        if (lo <= sample.meta["peak_displacement_px"] <= hi and sample.instances
+                and sample.meta["max_flow_gradient"] <= cfg["max_flow_gradient"]):
             sample.meta["attempts"] = attempt + 1
+            sample.scene = {"flow": flow, "optics": optics, "pattern": pattern}
             return sample
     raise RuntimeError(f"{flow_type}: no sample in the displacement window after "
                        f"{cfg['max_attempts']} attempts; widen the config ranges")
@@ -340,4 +350,6 @@ def generate_dataset(out_dir: Path | str, cfg: dict, counts: dict | None = None,
                         "peak_displacement_px": m["peak_displacement_px"]}) + "\n"
             for m in metas)
     write_coco_gt(out_dir / "samples", metas, vmax=cfg["peak_displacement_px"][1])
+    lineage.write_manifest(out_dir / "manifest.json", cfg, seed=seed, counts=counts,
+                           n_samples=len(metas))
     return metas

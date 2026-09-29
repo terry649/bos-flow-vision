@@ -1,0 +1,11 @@
+# M2 displacement benchmark. Each scene is re-rendered at every noise level with the
+# same flow, optics, and background, so only the camera changes.
+seed: 20260929
+scenes_per_flow_type: 20
+noise_levels:
+  clean:  {psf_sigma_px: 0.6, vignetting: 0.0, full_well_e: 1.0e+12, read_noise_e: 0.0, exposure: 0.8, background_level: 0.15, jpeg_quality: null}
+  low:    {psf_sigma_px: 0.6, vignetting: 0.15, full_well_e: 20000, read_noise_e: 5.0, exposure: 0.8, background_level: 0.15, jpeg_quality: null}
+  medium: {psf_sigma_px: 0.7, vignetting: 0.25, full_well_e: 5000, read_noise_e: 10.0, exposure: 0.6, background_level: 0.15, jpeg_quality: 90}
+  high:   {psf_sigma_px: 0.8, vignetting: 0.35, full_well_e: 1000, read_noise_e: 15.0, exposure: 0.4, background_level: 0.15, jpeg_quality: 75}
+# Dense, pixel-level estimators only: optical flow and deformable image registration.
+methods: [farneback, lucas_kanade, dis, tvl1, demons, raft]

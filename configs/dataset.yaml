@@ -2,6 +2,7 @@ seed: 20260928
 supersample: 4
 margin_px: 24
 peak_displacement_px: [0.3, 12.0]  # rejection window on the 99.9th percentile of |u|
+max_flow_gradient: 0.5            # reject ray crossing (caustics); real BOS setups avoid it
 min_band_px: 3.0                    # minimum labeled shock band width
 min_instance_area_px: 40
 max_attempts: 30

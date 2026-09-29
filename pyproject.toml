@@ -13,10 +13,19 @@ dependencies = [
     "pillow>=11.0",
     "opencv-python-headless>=4.10",
     "matplotlib>=3.9",
+    "torch>=2.14.0",
+    "torchvision>=0.29.0",
+    "simpleitk>=2.5.6",
+    "scikit-image>=0.26.0",
+    "roboflow>=1.5.1",
+    "pycocotools>=2.0.11",
 ]
 
 [dependency-groups]
 dev = ["pytest>=8.3", "ruff>=0.8"]
+train = [
+    "rfdetr[loggers,train]>=1.11.0",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -27,8 +36,19 @@ packages = ["src/bosflow"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+addopts = "-q -m 'not slow'"
+markers = ["slow: needs network or heavy compute (RAFT weights); run with -m slow"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+# CI runs on Linux without a GPU: pull CPU-only torch there, PyPI (MPS-capable) on macOS.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

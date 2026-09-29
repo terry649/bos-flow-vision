@@ -1,29 +1,5 @@
 #!/usr/bin/env bash
-# Blocks commits that add experimental data or secrets.
+# Blocks commits that add uncleared experimental data or secrets.
 # Enable with: git config core.hooksPath .githooks
 set -euo pipefail
-
-fail=0
-cleared="data/real/CLEARED.md"
-
-while IFS= read -r f; do
-  [ -z "$f" ] && continue
-  case "$f" in
-    data/real/README.md|data/real/CLEARED.md) ;;
-    data/real/*)
-      hash=$(git show ":$f" | shasum -a 256 | cut -d' ' -f1)
-      if ! grep -q "^$hash  $(basename "$f") " "$cleared" 2>/dev/null; then
-        echo "pre-commit: $f is not listed in $cleared with a matching hash." >&2
-        fail=1
-      fi
-      ;;
-  esac
-done < <(git diff --cached --name-only --diff-filter=ACMR)
-
-# Refuse anything that looks like a Roboflow key assignment.
-if git diff --cached -U0 | grep -E '^\+' | grep -Eiq 'ROBOFLOW_API_KEY *= *["'\'']?[A-Za-z0-9]{12,}'; then
-  echo "pre-commit: staged changes appear to contain a ROBOFLOW_API_KEY value." >&2
-  fail=1
-fi
-
-exit $fail
+exec python3 "$(git rev-parse --show-toplevel)/scripts/check_data_policy.py" --staged

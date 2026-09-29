@@ -1,10 +1,10 @@
 # Planar variable-density mixing layer with von Karman path-integrated turbulence.
-rho_lower: [0.3, 1.2]            # kg/m^3
+rho_lower: [0.15, 0.8]          # kg/m^3
 density_ratio: [0.3, 0.8]        # rho_upper / rho_lower, swapped at random
 growth: [0.08, 0.2]              # d(delta_omega)/dx
 origin_upstream_frac: [0.5, 1.2] # virtual origin distance upstream of the frame center, in FOV
 span: 0.15
-fluct_intensity: [0.03, 0.15]
+fluct_intensity: [0.02, 0.08]
 outer_scale_frac: [0.3, 1.0]
 center_y_frac: [-0.15, 0.15]
 angle_deg: [-20.0, 20.0]

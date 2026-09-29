@@ -4,7 +4,7 @@ sensor_pixel_pitch: 5.0e-6 # m
 binning: 4                 # 2048 px sensor binned to 512 px images
 image_size: [512, 512]
 Z_A: 1.2                   # lens to density object, m
-Z_D: [0.25, 0.75]          # density object to background, m
+Z_D: [0.15, 0.75]          # density object to background, m
 f_number: [11, 22]
 gladstone_dale: 2.26e-4    # m^3/kg
 rho_ambient: 1.2           # kg/m^3, sets n0

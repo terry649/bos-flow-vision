@@ -27,3 +27,5 @@ runs/
 results/**/*.npz
 
 .DS_Store
+results/ci_benchmark/
+runs/

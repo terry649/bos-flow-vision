@@ -1,0 +1,50 @@
+# Metric-gated displacement benchmark. Runs a reduced M2 benchmark when physics,
+# optics, or estimator code changes, fails on regression against configs/gates.yaml,
+# and uploads the tables and figures as an artifact.
+name: benchmark
+
+on:
+  pull_request:
+    paths:
+      - "src/bosflow/physics/**"
+      - "src/bosflow/optics/**"
+      - "src/bosflow/displacement/**"
+      - "src/bosflow/generate.py"
+      - "configs/**"
+      - "uv.lock"
+  workflow_dispatch:
+    inputs:
+      scenes:
+        description: "scenes per flow type"
+        default: "2"
+
+permissions:
+  contents: read
+
+jobs:
+  displacement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: "0.12.19"
+          enable-cache: true
+      - run: uv sync --locked
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/torch/hub/checkpoints
+          key: torch-hub-${{ hashFiles('uv.lock') }}
+      - name: run benchmark
+        run: >
+          uv run python scripts/benchmark_displacement.py
+          --scenes ${{ inputs.scenes || '2' }} --out results/ci_benchmark
+      - name: gate on metrics
+        run: uv run python scripts/check_metrics.py results/ci_benchmark/records.csv --summary "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: benchmark-${{ github.sha }}
+          path: results/ci_benchmark
+          retention-days: 30
