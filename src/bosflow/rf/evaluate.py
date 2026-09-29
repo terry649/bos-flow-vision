@@ -46,6 +46,7 @@ def coco_mask_map(gt_json: Path | str, results: list[dict]) -> dict:
     prec = ev.eval["precision"]  # [T iou, R recall, K class, A area, M maxdets]
     per_class = {}
     for k, cat_id in enumerate(ev.params.catIds):
+        cat_id = int(cat_id)  # pycocotools returns None for numpy integer ids
         name = gt.loadCats(cat_id)[0]["name"]
         p = prec[:, :, k, 0, -1]
         p50 = prec[0, :, k, 0, -1]
