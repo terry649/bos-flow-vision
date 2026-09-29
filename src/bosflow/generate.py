@@ -337,6 +337,7 @@ def generate_dataset(out_dir: Path | str, cfg: dict, counts: dict | None = None,
     out_dir = Path(out_dir)
     counts = counts or cfg["counts"]
     seed = cfg["seed"] if seed is None else seed
+    start = lineage.manifest(cfg)
     jobs = [(ft, k) for ft in FLOW_TYPES for k in range(counts.get(ft, 0))]
     children = np.random.SeedSequence(seed).spawn(len(jobs))
     metas = []
@@ -350,6 +351,6 @@ def generate_dataset(out_dir: Path | str, cfg: dict, counts: dict | None = None,
                         "peak_displacement_px": m["peak_displacement_px"]}) + "\n"
             for m in metas)
     write_coco_gt(out_dir / "samples", metas, vmax=cfg["peak_displacement_px"][1])
-    lineage.write_manifest(out_dir / "manifest.json", cfg, seed=seed, counts=counts,
+    lineage.write_manifest(out_dir / "manifest.json", cfg, start=start, seed=seed, counts=counts,
                            n_samples=len(metas))
     return metas

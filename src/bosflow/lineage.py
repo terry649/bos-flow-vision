@@ -50,7 +50,12 @@ def manifest(cfg: dict, **extra) -> dict:
     }
 
 
-def write_manifest(path: Path, cfg: dict, **extra) -> dict:
+def write_manifest(path: Path, cfg: dict, start: dict | None = None, **extra) -> dict:
+    """Write a manifest. Pass ``start=manifest(cfg)`` captured when a long run began, so
+    commits made while it ran are not misattributed; the end state is recorded too."""
     m = manifest(cfg, **extra)
+    if start is not None:
+        m["git_commit_at_end"], m["git_dirty_at_end"] = m["git_commit"], m["git_dirty"]
+        m["git_commit"], m["git_dirty"] = start["git_commit"], start["git_dirty"]
     Path(path).write_text(json.dumps(m, indent=1, sort_keys=True, default=str))
     return m
