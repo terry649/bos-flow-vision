@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Data: synthetic data is regenerated from seeds; real data never enters git
+data/synthetic/*
+!data/synthetic/.gitkeep
+data/real/*
+!data/real/README.md
+!data/real/CLEARED.md
+
+# Model weights and large artifacts
+*.pt
+*.pth
+*.onnx
+runs/
+results/**/*.npz
+
+.DS_Store

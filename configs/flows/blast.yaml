@@ -1,0 +1,8 @@
+# Spherical Sedov-Taylor blast (strong shock), axisymmetric line-of-sight integral.
+E: [20.0, 2000.0]                # J, log-uniform
+rho0: [0.2, 1.2]                 # kg/m^3, log-uniform
+T0: 293.0                        # K, sets ambient pressure for the shock Mach check
+radius_frac: [0.12, 0.45]        # shock radius as a fraction of the field of view
+min_shock_mach: 2.5              # strong-shock validity; resampled below this
+center_x_frac: [-0.2, 0.2]
+center_y_frac: [-0.2, 0.2]

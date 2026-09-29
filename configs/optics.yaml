@@ -1,0 +1,25 @@
+# BOS setup. Scalars are fixed; [lo, hi] pairs are sampled uniformly per image.
+focal_length: 0.100        # m
+sensor_pixel_pitch: 5.0e-6 # m
+binning: 4                 # 2048 px sensor binned to 512 px images
+image_size: [512, 512]
+Z_A: 1.2                   # lens to density object, m
+Z_D: [0.25, 0.75]          # density object to background, m
+f_number: [11, 22]
+gladstone_dale: 2.26e-4    # m^3/kg
+rho_ambient: 1.2           # kg/m^3, sets n0
+
+background:
+  fill_fraction: [0.35, 0.6]   # mean reflectance of the dot pattern
+  dot_diameter_px: [2.0, 3.5]  # FWHM
+
+camera:
+  psf_sigma_px: [0.4, 0.9]
+  vignetting: [0.0, 0.35]
+  full_well_e: 20000
+  read_noise_e: [4, 12]
+  exposure: [0.5, 0.9]
+  background_level: [0.1, 0.25]
+  bit_depth: 8
+  jpeg_probability: 0.3
+  jpeg_quality: [75, 95]

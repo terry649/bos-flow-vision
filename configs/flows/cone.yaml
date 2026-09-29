@@ -1,0 +1,8 @@
+# Sharp cone at zero incidence (Taylor-Maccoll), axisymmetric line-of-sight integral.
+M1: [1.6, 4.0]
+half_angle_deg: [5.0, 30.0]      # resampled if the shock detaches
+rho1: [0.15, 1.2]
+apex_x_frac: [-0.45, -0.05]
+apex_y_frac: [-0.15, 0.15]
+angle_deg: [-20.0, 20.0]
+flip_probability: 0.5

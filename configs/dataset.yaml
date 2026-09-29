@@ -1,0 +1,17 @@
+seed: 20260928
+supersample: 4
+margin_px: 24
+peak_displacement_px: [0.3, 12.0]  # rejection window on the 99.9th percentile of |u|
+min_band_px: 3.0                    # minimum labeled shock band width
+min_instance_area_px: 40
+max_attempts: 30
+counts:                             # images per flow type
+  wedge: 200
+  cone: 200
+  blast: 200
+  expansion: 200
+  shear_layer: 200
+sequences:
+  blast:
+    count: 20
+    frames: 12

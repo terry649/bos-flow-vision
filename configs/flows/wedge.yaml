@@ -1,0 +1,9 @@
+# Symmetric 2D wedge, attached oblique shocks (theta-beta-M).
+M1: [1.6, 4.0]
+half_angle_deg: [4.0, 25.0]      # capped at 0.85 of the detachment angle
+rho1: [0.08, 0.6]                # kg/m^3, sampled log-uniform
+span: 0.15                       # line-of-sight depth of the planar flow, m
+apex_x_frac: [-0.45, -0.05]      # apex position as a fraction of the field of view
+apex_y_frac: [-0.15, 0.15]
+angle_deg: [-20.0, 20.0]
+flip_probability: 0.5            # flow right to left
