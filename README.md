@@ -69,19 +69,20 @@ are in `results/m4/README.md`. All results are on synthetic data.
 | `src/bosflow/physics` | Gas dynamics, flow fields, turbulence |
 | `src/bosflow/optics` | BOS optical model, background, warping, camera |
 | `src/bosflow/displacement` | Displacement estimators and metrics |
-| `src/bosflow/rf` | Dataset export, Roboflow client, mask evaluation |
+| `src/bosflow/rf` | Dataset export, dataset hosting client, mask evaluation |
 | `src/bosflow/analysis` | Shock-angle and physics checks from masks |
-| `deploy/` | Serving environment (Roboflow `inference`, `supervision`, `trackers`) |
+| `deploy/` | Serving environment (`inference`, `supervision`, `trackers`) |
 | `configs/` | Generator, optics, benchmark, gate, and stress-test configuration |
 | `scripts/` | Command-line entry points for each stage |
 | `results/` | Committed metrics, summaries, and figures |
 
-## Tooling
+## Dependencies
 
-The dataset is hosted and versioned on the Roboflow platform (project
-`bos-flow-features`). Models are RF-DETR Seg, trained both on Roboflow and locally
-with the open-source `rfdetr` package, served with Roboflow `inference`, annotated
-with `supervision`, and tracked with ByteTrack from `trackers`.
+NumPy, SciPy, OpenCV, scikit-image, and SimpleITK for the physics, optics, and
+displacement estimation; PyTorch, torchvision (RAFT), and `rfdetr` (RF-DETR Seg) for
+learning; `inference`, `supervision`, and `trackers` (ByteTrack) for serving,
+annotation, and tracking; pycocotools for evaluation. Exact versions are pinned in
+`uv.lock` and `deploy/uv.lock`.
 
 ## Setup
 
@@ -92,8 +93,9 @@ uv run pytest
 ```
 
 The serving environment is separate: `uv sync --project deploy`. Local training
-needs the optional group: `uv sync --group train`. Roboflow operations read
-`ROBOFLOW_API_KEY` from the environment or from a local, gitignored `.env`.
+needs the optional group: `uv sync --group train`. Dataset hosting and hosted
+training read an API key from the environment or from a local, gitignored `.env`
+(see `.env.example`).
 
 ## Data policy
 
