@@ -49,3 +49,4 @@ results/m4_experiments/eval*/results.json
 !results/m4_experiments/eval_d3/arm_D_platform_labels/sequences/blast_014.mp4
 !results/m4_experiments/eval/v2_hosted/sequences/blast_014.mp4
 results/m4_experiments/**/.synced
+demo_output/

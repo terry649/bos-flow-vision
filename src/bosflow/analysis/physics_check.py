@@ -51,7 +51,12 @@ def mach_from_cone_shock(beta_deg: float, cone_deg: float, gamma: float = gd.GAM
         except ValueError:  # detached at this Mach number: shock is effectively normal
             return np.pi / 2 - beta
 
-    # Shock angle falls with M; bracket the sign change on a coarse grid first.
+    # A shock is never shallower than the Mach angle, so M > 1/sin(beta): at that bound
+    # the cone shock is steeper than beta (f > 0), and at high Mach it is shallower.
+    lo = max(m_lo, 1.0 / np.sin(beta) + 1e-6)
+    if f(lo) > 0 > f(m_hi):
+        return float(brentq(f, lo, m_hi, xtol=1e-8))
+    # Fallback: bracket the sign change on a coarse grid.
     grid = np.geomspace(m_lo, m_hi, 40)
     vals = [f(M) for M in grid]
     for a, b, fa, fb in zip(grid[:-1], grid[1:], vals[:-1], vals[1:]):
