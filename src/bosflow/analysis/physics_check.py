@@ -72,6 +72,18 @@ def fit_circle(mask: np.ndarray, weight: np.ndarray | None = None):
     return float(xc), float(yc), float(np.sqrt(c2 + xc**2 + yc**2))
 
 
+def circle_residual_ratio(mask: np.ndarray) -> float:
+    """RMS distance of mask pixels from their fitted circle, over the radius.
+
+    A shock front is a thin surface, so a valid blast-front mask has a small ratio
+    (a band of width w gives about w / (sqrt(12) R)); a filled disk gives about 0.3.
+    """
+    xc, yc, R = fit_circle(mask)
+    rows, cols = np.nonzero(mask)
+    d = np.hypot(cols - xc, rows - yc) - R
+    return float(np.sqrt(np.mean(d**2)) / max(R, 1e-9))
+
+
 def power_law_fit(t: np.ndarray, R: np.ndarray) -> tuple[float, float]:
     """Fit R = A t^n in log space; returns (n, A)."""
     n, logA = np.polyfit(np.log(t), np.log(R), 1)

@@ -90,7 +90,7 @@ def box_iou(a, b) -> float:
     return inter / (area(a) + area(b) - inter + 1e-9)
 
 
-def blast_tracks(seq_root: Path, pred: dict) -> list[dict]:
+def blast_tracks(seq_root: Path, pred: dict, max_residual: float = 0.05) -> list[dict]:
     out = []
     for name, frames in pred["sequences"].items():
         truth = {t["file_name"]: t for t in json.loads((seq_root / name / "truth.json").read_text())}
@@ -115,26 +115,43 @@ def blast_tracks(seq_root: Path, pred: dict) -> list[dict]:
                         and box_iou(d["bbox_xyxy"], anchor["bbox_xyxy"]) > 0.3):
                     d["tracker_id"] = tid
                     break
-        t, R, R_true = [], [], []
-        for f in frames:
-            dets = [d for d in f["detections"] if d.get("tracker_id") == tid]
-            if not dets:
-                continue
-            tr = truth[f["file_name"]]
-            _, _, r_px = P.fit_circle(decode(dets[0]))
-            t.append(tr["t"])
-            R.append(r_px * tr["object_pixel_size_m"])
-            R_true.append(tr["shock_radius_m"])
-        t, R, R_true = map(np.asarray, (t, R, R_true))
         tr0 = next(iter(truth.values()))
-        rec = {"sequence": name, "frames_tracked": len(t), "frames_total": len(frames),
-               "track_ids_seen": len(ids),
-               "radius_err_px_median": float(np.median(np.abs(R - R_true)) /
-                                             tr0["object_pixel_size_m"]) if len(t) else None}
-        if len(t) >= 3:
-            n, _ = P.power_law_fit(t, R)
-            E = P.sedov_energy(t, R, tr0["rho0"])
-            rec.update(exponent=n, E_pred=E, E_true=tr0["E"], E_rel_err=E / tr0["E"] - 1.0)
+        rec = {"sequence": name, "frames_total": len(frames), "track_ids_seen": len(ids)}
+        for variant in ("raw", "gated"):
+            t, R, R_true, changed = [], [], [], 0
+            for f in frames:
+                on_track = [d for d in f["detections"] if d.get("tracker_id") == tid]
+                if not on_track:
+                    continue
+                chosen = on_track[0]
+                if variant == "gated":
+                    # Thin-front gate: a shock front is a thin surface. Among shock masks
+                    # overlapping the track's box (confirmed or not), keep thin fronts
+                    # and take the most confident; drop the frame if none is thin.
+                    box = on_track[0]["bbox_xyxy"]
+                    cands = [d for d in f["detections"] if d["class_name"] == "shock"
+                             and box_iou(d["bbox_xyxy"], box) > 0.3
+                             and P.circle_residual_ratio(decode(d)) < max_residual]
+                    if not cands:
+                        changed += 1
+                        continue
+                    chosen = max(cands, key=lambda d: d["confidence"])
+                    changed += chosen is not on_track[0]
+                tr = truth[f["file_name"]]
+                _, _, r_px = P.fit_circle(decode(chosen))
+                t.append(tr["t"])
+                R.append(r_px * tr["object_pixel_size_m"])
+                R_true.append(tr["shock_radius_m"])
+            t, R, R_true = map(np.asarray, (t, R, R_true))
+            v = {"frames_used": len(t), "frames_replaced_or_dropped": changed}
+            if len(t):
+                v["radius_err_px_median"] = float(np.median(np.abs(R - R_true)) /
+                                                  tr0["object_pixel_size_m"])
+            if len(t) >= 3:
+                n, _ = P.power_law_fit(t, R)
+                E = P.sedov_energy(t, R, tr0["rho0"])
+                v.update(exponent=n, E_pred=E, E_true=tr0["E"], E_rel_err=E / tr0["E"] - 1.0)
+            rec[variant] = v
         out.append(rec)
     return out
 
@@ -161,17 +178,27 @@ def summarize(mm: dict, mach: list[dict], blast: list[dict]) -> str:
                      f"{np.median(dm) if ok else float('nan'):.3f} | "
                      f"{100 * np.median(rel) if ok else float('nan'):.1f}% | {len(rs) - len(ok)} |")
     lines.append("\n## Blast fronts tracked through sequences\n")
-    done = [b for b in blast if "exponent" in b]
-    if done:
-        ex = np.array([b["exponent"] for b in done])
-        er = np.abs([b["E_rel_err"] for b in done])
-        trk = np.array([b["frames_tracked"] / b["frames_total"] for b in done])
-        lines += [f"- sequences with a usable track: {len(done)} of {len(blast)}",
-                  f"- frames on the dominant track: {100 * trk.mean():.1f}% (mean)",
-                  f"- fitted exponent n: {ex.mean():.4f} +- {ex.std():.4f} (Sedov-Taylor: 0.4)",
-                  f"- blast energy, median abs relative error: {100 * np.median(er):.1f}%",
-                  ("- median radius error: "
-                   f"{np.median([b['radius_err_px_median'] for b in done]):.2f} px")]
+    lines.append("raw: the tracker's detection in each frame. gated: thin-front check "
+                 "(circle-fit residual < 5% of radius) among shock masks overlapping the "
+                 "track, most confident kept.\n")
+    lines.append("| variant | sequences | frames used | frames replaced or dropped | "
+                 "exponent n (theory 0.4) | median abs E error | worst E error | "
+                 "median radius error (px) |")
+    lines.append("|---|---:|---:|---:|---:|---:|---:|---:|")
+    total = sum(b["frames_total"] for b in blast)
+    for variant in ("raw", "gated"):
+        done = [b[variant] for b in blast if "exponent" in b.get(variant, {})]
+        if not done:
+            continue
+        ex = np.array([d["exponent"] for d in done])
+        er = np.abs([d["E_rel_err"] for d in done])
+        lines.append(
+            f"| {variant} | {len(done)}/{len(blast)} | "
+            f"{sum(d['frames_used'] for d in done)}/{total} | "
+            f"{sum(d['frames_replaced_or_dropped'] for d in done)} | "
+            f"{ex.mean():.4f} +- {ex.std():.4f} | {100 * np.median(er):.1f}% | "
+            f"{100 * er.max():.1f}% | "
+            f"{np.median([d['radius_err_px_median'] for d in done]):.2f} |")
     return "\n".join(lines) + "\n"
 
 
@@ -182,12 +209,18 @@ def main():
     ap.add_argument("--pred", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--min-conf", type=float, default=0.5)
+    ap.add_argument("--reuse", action="store_true",
+                    help="reuse mask_map.json and shock_mach.json in --out (blast analysis only)")
     args = ap.parse_args()
 
     pred_test = json.loads((args.pred / "predictions_test.json").read_text())
     pred_seq = json.loads((args.pred / "predictions_sequences.json").read_text())
-    mm = mask_map(args.export, pred_test)
-    mach = shock_mach(args.export, pred_test, args.min_conf)
+    if args.reuse:
+        mm = json.loads((args.out / "mask_map.json").read_text())
+        mach = json.loads((args.out / "shock_mach.json").read_text())
+    else:
+        mm = mask_map(args.export, pred_test)
+        mach = shock_mach(args.export, pred_test, args.min_conf)
     blast = blast_tracks(args.sequences, pred_seq)
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "mask_map.json").write_text(json.dumps(mm, indent=1))

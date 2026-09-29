@@ -29,3 +29,7 @@ results/**/*.npz
 .DS_Store
 results/ci_benchmark/
 runs/
+# M4 videos: keep one typical and one failure case per model
+results/m4/*/blast_*.mp4
+!results/m4/*/blast_003.mp4
+!results/m4/*/blast_014.mp4

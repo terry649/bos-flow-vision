@@ -54,3 +54,15 @@ def test_power_law_and_sedov_energy_recover_truth():
     n, _ = P.power_law_fit(t, R)
     assert n == pytest.approx(0.4, abs=1e-9)
     assert P.sedov_energy(t, R, rho0) == pytest.approx(E, rel=1e-9)
+
+
+def test_thin_front_gate_separates_ring_from_filled_disk():
+    yy, xx = np.mgrid[0:256, 0:256]
+    r = np.hypot(xx - 128, yy - 128)
+    ring = np.abs(r - 80.0) < 3.0
+    disk = r < 80.0
+    clipped_ring = ring & (xx < 190)  # an arc cut by the image edge is still thin
+    # A band of width w = 6 px at R = 80 px: w / (sqrt(12) R) = 0.0217.
+    assert P.circle_residual_ratio(ring) == pytest.approx(6 / (np.sqrt(12) * 80), rel=0.05)
+    assert P.circle_residual_ratio(clipped_ring) < 0.05
+    assert P.circle_residual_ratio(disk) > 0.2
