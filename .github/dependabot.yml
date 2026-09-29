@@ -14,4 +14,8 @@ updates:
     groups:
       python:
         patterns: ["*"]
+    ignore:
+      # roboflow 1.5.1 requires numpy<2.4; remove once the SDK relaxes that pin.
+      - dependency-name: numpy
+        versions: [">=2.4"]
     open-pull-requests-limit: 3
