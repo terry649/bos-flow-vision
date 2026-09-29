@@ -69,10 +69,12 @@ class Model:
             atexit.register(shutil.rmtree, tmpdir, ignore_errors=True)
             stripped = Path(tmpdir) / "checkpoint.pth"
             torch.save(ck, stripped)
-            # rfdetr heads have num_classes + 1 outputs; label index k is the k-th training
-            # category (shock = 0) and the extra last slot is unused. Verified against
-            # rfdetr.predict on the same checkpoint (scripts/check_serving_parity.py).
-            self.labels = [*CLASSES, "_unused"]
+            # rfdetr heads have num_classes + 1 outputs. Locally trained checkpoints put the
+            # k-th training category at index k (shock = 0) with an unused last slot
+            # (verified by scripts/check_serving_parity.py). Checkpoints trained from a
+            # Roboflow export put the annotation group at index 0 and the classes in
+            # alphabetical order after it; pass --labels for those.
+            self.labels = args.labels.split(",") if args.labels else [*CLASSES, "_unused"]
             self.name = f"local:{args.checkpoint}"
             self._m = AutoModel.from_pretrained(
                 str(stripped), model_type=args.model_type, task_type="instance-segmentation",
@@ -173,6 +175,8 @@ def main():
     ap.add_argument("--resolution", type=int, default=None)
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--confidence", type=float, default=0.3)
+    ap.add_argument("--labels", default=None,
+                    help="comma-separated class name per output index (local checkpoints only)")
     ap.add_argument("--images", type=Path, action="append", default=[])
     ap.add_argument("--sequences", type=Path, default=None)
     ap.add_argument("--fps", type=int, default=4)

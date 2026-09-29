@@ -3,6 +3,12 @@
 COCO polygons cannot carry holes, but an expanding blast front labeled as a band
 is an annulus. Holes are merged into their outer contour with a zero-width
 "keyhole" bridge, which even-odd and nonzero polygon fills both render correctly.
+
+An instance can also have several disconnected pieces, for example a blast front
+cut into arcs by the image edges. COCO allows a list of polygons per annotation,
+but some annotation platforms store one polygon per instance and concatenate the
+list into a single filled shape. ``instance_annotations`` therefore emits one
+annotation per piece by default; their union is the original mask.
 """
 
 from __future__ import annotations
@@ -79,6 +85,26 @@ def build_coco(images: list[dict], annotations: list[dict], description: str) ->
         "images": images,
         "annotations": annotations,
     }
+
+
+def instance_annotations(first_id: int, image_id: int, cls: str, mask: np.ndarray,
+                         polys: list[list[float]] | None = None,
+                         split_parts: bool = True) -> list[dict]:
+    """COCO annotations for one instance: one per disconnected piece when ``split_parts``."""
+    polys = mask_to_polygons(mask) if polys is None else polys
+    if not polys:
+        return []
+    if not split_parts or len(polys) == 1:
+        a = instance_annotation(first_id, image_id, cls, mask, polys)
+        return [a] if a else []
+    out = []
+    for p in polys:
+        piece = polygons_to_mask([p], mask.shape) & mask
+        if piece.any():
+            out.append({"id": first_id + len(out), "image_id": image_id,
+                        "category_id": CLASSES.index(cls) + 1, "segmentation": [p],
+                        "area": float(piece.sum()), "bbox": bbox_of(piece), "iscrowd": 0})
+    return out
 
 
 def instance_annotation(ann_id: int, image_id: int, cls: str, mask: np.ndarray,

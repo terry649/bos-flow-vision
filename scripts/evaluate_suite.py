@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import time
 from pathlib import Path
 
 import numpy as np
@@ -31,6 +32,9 @@ MODELS = {
     "arm_C_vec_encoding": (["--checkpoint", "runs/m4_C_vec_encoding/checkpoint_best_total.pth"],
                            "vec"),
     "v2_hosted": (["--model-id", "bos-flow-features/2"], "mag"),
+    # Same hosted-trained weights, downloaded and served in PyTorch like the local models.
+    "v2_hosted_weights_pytorch": (["--checkpoint", "runs/hosted_v2_weights/weights.pt",
+                                   "--labels", "_group,expansion_fan,shear_layer,shock"], "mag"),
 }
 LOCAL = ["--model-type", "rfdetr-seg-medium", "--resolution", "432"]
 
@@ -54,7 +58,14 @@ def run_serving(model: str, images: Path | None, sequences: Path | None, out: Pa
         cmd += ["--images", str(images)]
     if sequences:
         cmd += ["--sequences", str(sequences)]
-    subprocess.run(cmd, cwd=ROOT, check=True, capture_output=True)
+    # Hosted models call the Roboflow API at load time; retry transient network errors.
+    for attempt in range(3):
+        r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, check=False)
+        if r.returncode == 0:
+            return
+        print(f"serving {model} failed (attempt {attempt + 1}): {r.stderr.strip()[-300:]}")
+        time.sleep(30)
+    raise RuntimeError(f"serving {model} failed after 3 attempts")
 
 
 def summarize_mach(rows: list[dict]) -> dict:

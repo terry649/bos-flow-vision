@@ -116,10 +116,9 @@ def export(dataset_dir: Path | str, out_dir: Path | str, estimator: str,
         c["images"].append({"id": image_id, "file_name": fname,
                             "height": img.shape[0], "width": img.shape[1]})
         for inst, mask in zip(meta["instances"], gt["instance_masks"]):
-            a = labels.instance_annotation(len(c["annotations"]) + 1, image_id, inst["class"],
-                                           mask.astype(bool), inst["polygons"])
-            if a:
-                c["annotations"].append(a)
+            c["annotations"] += labels.instance_annotations(
+                len(c["annotations"]) + 1, image_id, inst["class"], mask.astype(bool),
+                inst["polygons"])
         meta_lines.append(json.dumps({
             "file_name": fname, "split": split, "flow_type": meta["flow"]["flow_type"],
             "estimator": estimator, "encoding": encoding, "magnitude_scale_px": scale,

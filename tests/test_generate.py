@@ -128,3 +128,22 @@ def test_blast_sequence_follows_sedov_radius(cfg):
     # Same background for every frame: reference images differ only by noise.
     diff = frames[0].reference.astype(float) - frames[1].reference.astype(float)
     assert np.abs(diff).mean() < 4.0
+
+
+def test_clipped_blast_front_exports_one_annotation_per_piece():
+    """A ring cut into separate arcs becomes one simple polygon per piece, whose union
+    reproduces the mask (platforms that store one polygon per instance keep them intact)."""
+    import cv2
+
+    yy, xx = np.mgrid[0:256, 0:256]
+    r = np.hypot(xx - 250, yy - 250)  # center near the corner: ring leaves the frame twice
+    mask = np.abs(r - 150.0) < 4.0
+    mask[:, 140:160] = False  # a gap splits the visible arc into disconnected pieces
+    n_parts = cv2.connectedComponents(mask.astype(np.uint8))[0] - 1
+    anns = labels.instance_annotations(1, 1, "shock", mask)
+    assert n_parts >= 2 and len(anns) == n_parts
+    assert all(len(a["segmentation"]) == 1 for a in anns)
+    assert [a["id"] for a in anns] == list(range(1, n_parts + 1))
+    union = labels.polygons_to_mask([a["segmentation"][0] for a in anns], mask.shape)
+    assert (union & mask).sum() / (union | mask).sum() > 0.9
+    assert abs(sum(a["area"] for a in anns) - mask.sum()) < 0.05 * mask.sum()  # polygon edges

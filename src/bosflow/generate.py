@@ -337,11 +337,10 @@ def write_coco_gt(out_dir: Path, metas: list[dict], vmax: float) -> Path:
         images.append({"id": image_id, "file_name": fname, "height": rows, "width": cols,
                        "flow_type": meta["flow"]["flow_type"]})
         for inst, mask in zip(meta["instances"], gt["instance_masks"]):
-            a = labels.instance_annotation(ann_id, image_id, inst["class"], mask.astype(bool),
-                                           inst["polygons"])
-            if a:
-                anns.append(a)
-                ann_id += 1
+            new = labels.instance_annotations(ann_id, image_id, inst["class"],
+                                              mask.astype(bool), inst["polygons"])
+            anns += new
+            ann_id += len(new)
     path = img_dir / "_annotations.coco.json"
     path.write_text(json.dumps(labels.build_coco(images, anns, "bosflow synthetic GT")))
     return path
