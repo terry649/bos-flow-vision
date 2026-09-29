@@ -143,15 +143,19 @@ def track_sequences(model: Model, seq_root: Path, out: Path, fps: int) -> None:
                 frame = cv2.imread(str(f))
                 det = model.predict(frame)
                 det = tracker.update(det)
-                det = det[det.tracker_id >= 0] if det.tracker_id is not None else det
-                names = model.class_names(det)
+                # ByteTrack confirms a new track only on its second match, so first-frame
+                # detections carry tracker_id -1. Keep them in the records (the analysis
+                # backfills them); draw only confirmed tracks.
+                shown = det[det.tracker_id >= 0] if det.tracker_id is not None else det
+                names = model.class_names(shown)
                 labels = [f"#{t} {c} {p:.2f}" for t, c, p in
-                          zip(det.tracker_id, names, det.confidence)]
-                scene = mask_ann.annotate(frame.copy(), det)
-                scene = label_ann.annotate(scene, det, labels=labels)
-                scene = trace_ann.annotate(scene, det)
+                          zip(shown.tracker_id, names, shown.confidence)]
+                scene = mask_ann.annotate(frame.copy(), shown)
+                scene = label_ann.annotate(scene, shown, labels=labels)
+                scene = trace_ann.annotate(scene, shown)
                 sink.write_frame(scene)
-                records.append({"file_name": f.name, "detections": to_records(det, names)})
+                records.append({"file_name": f.name,
+                                "detections": to_records(det, model.class_names(det))})
         results[seq.name] = records
     (out / "predictions_sequences.json").write_text(
         json.dumps({"model": model.name, "sequences": results}))
