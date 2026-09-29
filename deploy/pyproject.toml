@@ -1,0 +1,33 @@
+# Serving environment for M4: Roboflow `inference` + supervision + trackers.
+# Kept separate from the research environment because inference 1.7.2 pins
+# supervision<0.30, scikit-image<=0.25.2, and opencv-python<4.13, which would change
+# the libraries behind the M2 benchmark. The two environments exchange predictions
+# as files (COCO-style JSON with RLE masks).
+[project]
+name = "bosflow-deploy"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "inference==1.7.2",
+    "pycocotools>=2.0.8",
+]
+
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+# inference's tree installs opencv-python, opencv-contrib-python, and (via easyocr)
+# opencv-python-headless 5.x; all write the same cv2 package and break each other.
+# Keep only opencv-contrib-python, a superset of the other two.
+[tool.uv]
+package = false
+override-dependencies = [
+    "opencv-python; sys_platform == 'never'",
+    "opencv-python-headless; sys_platform == 'never'",
+]
