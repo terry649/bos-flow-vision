@@ -31,6 +31,8 @@ MODELS = {
     "arm_B_v2_data": (["--checkpoint", "runs/m4_B_v2_data/checkpoint_best_total.pth"], "mag"),
     "arm_C_vec_encoding": (["--checkpoint", "runs/m4_C_vec_encoding/checkpoint_best_total.pth"],
                            "vec"),
+    "arm_D_platform_labels": (["--checkpoint", "runs/m4_D_platform_labels/checkpoint_best_total.pth"],
+                              "mag"),
     "v2_hosted": (["--model-id", "bos-flow-features/2"], "mag"),
     # Same hosted-trained weights, downloaded and served in PyTorch like the local models.
     "v2_hosted_weights_pytorch": (["--checkpoint", "runs/hosted_v2_weights/weights.pt",
